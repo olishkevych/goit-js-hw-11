@@ -1,70 +1,87 @@
-import debounce from 'lodash.debounce';
-import { fetchCountries } from './fetchCountries';
-import Notiflix from 'notiflix';
+const formEl = document.getElementById('search-form');
+const galleryEl = document.querySelector('.gallery');
 
-const inputEl = document.getElementById('search-box');
-const countryInfoEl = document.querySelector('.country-info');
-const countryListEl = document.querySelector('.country-list');
+const API_KEY = '36396693-28c70313af4bfc02da8bd4331';
+const URL = 'https://pixabay.com/api/';
 
-const DEBOUNCE_DELAY = 300;
+formEl.addEventListener('submit', onFormSubmit);
 
-inputEl.addEventListener('input', debounce(onInputChange, DEBOUNCE_DELAY, []));
-
-function onInputChange(event) {
-  countryListEl.innerHTML = '';
-  countryInfoEl.innerHTML = '';
-
-  let countryName = event.target.value.trim();
-  if (countryName === '') return;
-  else
-    fetchCountries(countryName)
-      .then(countries => {
-        if (countries.length > 10) {
-          Notiflix.Notify.info(
-            'Too many matches found. Please enter a more specific name'
+function onFormSubmit(event) {
+  event.preventDefault();
+  galleryEl.innerHTML = '';
+  let searchQuery = formEl.elements[0].value.trim();
+  if (searchQuery) {
+    fetchImages(searchQuery)
+      .then(images => {
+        if (images.total === 0) {
+          alert(
+            'Sorry, there are no images matching your search query. Please try again.'
           );
-          return;
-        } else if (countries.length === 1) {
-          return renderOneCountry(countries);
         } else {
-          return renderCountriesList(countries);
+          renderImages(createImagesMarkup(images));
         }
       })
-      .catch(error => {
-        if (error.status === '404') {
-          Notiflix.Notify.warning('Oops, there is no country with that name');
-        }
-      });
+      .catch(error => console.log(error));
+  } else {
+    alert('empty field');
+    return;
+  }
+
+  formEl.reset();
 }
 
-function renderOneCountry(countries) {
-  let markup = createCountryCarddMarkup(countries[0]);
-  countryInfoEl.innerHTML = markup;
-}
-function renderCountriesList(countries) {
-  let markup = countries.reduce(
-    (markup, country) => markup + createListMarkup(country),
-    ''
-  );
-  countryListEl.innerHTML = markup;
+async function fetchImages(searchQuery) {
+  const options = {
+    q: searchQuery,
+    image_type: 'photo',
+    orientation: 'horizontal',
+    safesearch: true,
+  };
+
+  const parameters = new URLSearchParams(options);
+
+  const response = await fetch(`${URL}?key=${API_KEY}&${parameters}`);
+  const images = await response.json();
+  console.log(parameters.q);
+  return images;
 }
 
-function createListMarkup({ flags, name }) {
-  return `<li class="country-list-el"> <img src=${flags.svg} width = 20px> ${name.official}</li>`;
+function createImagesMarkup(images) {
+  const markup = images.hits
+    .map(
+      ({
+        webformatURL,
+        largeImageURL,
+        tags,
+        likes,
+        views,
+        comments,
+        downloads,
+      }) => {
+        return `<div class="photo-card">
+      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+      <div class="info">
+        <p class="info-item">
+          <b>Likes</b> ${likes}
+        </p>
+        <p class="info-item">
+          <b>Views</b> ${views}
+        </p>
+        <p class="info-item">
+          <b>Comments</b> ${comments}
+        </p>
+        <p class="info-item">
+          <b>Downloads</b> ${downloads}
+        </p>
+      </div>
+    </div>
+  `;
+      }
+    )
+    .join('');
+  return markup;
 }
 
-function createCountryCarddMarkup({
-  name,
-  languages,
-  population,
-  flags,
-  capital,
-}) {
-  return `<div class="country-card"><img src=${flags.svg} width=40px>
-  <h2 class="country-card-title">${name.official}</h2>
-  <ul class="country-card-info">
-  <li><b>Capital:</b> ${capital}</li>
-  <li><b>Population:</b> ${population}</li>
-  <li><b>Languages:</b> ${Object.values([...languages].join(' '))}</li>
-  </ul></div>`;
+function renderImages(markup) {
+  galleryEl.insertAdjacentHTML('beforeend', markup);
 }
