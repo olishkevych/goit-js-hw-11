@@ -1,0 +1,46 @@
+body {
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
+    'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.wrapper {
+  background-color: #618685;
+  width: 400px;
+  height: 650px;
+  padding: 10px 20px;
+}
+.country-list {
+  width: 360px;
+  padding: 0;
+  margin-bottom: 0px;
+  line-height: 1.5;
+}
+
+.country-list > li {
+  background-color: #d5f4e6;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.country-info {
+  width: 360px;
+}
+
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+img {
+  display: inline;
+}
+
+h2 {
+  display: inline;
+}
+.country-card {
+  background-color: #d5f4e6;
+  padding: 10px;
+  border-radius: 5px;
+}
