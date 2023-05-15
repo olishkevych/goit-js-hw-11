@@ -1,46 +1,17 @@
-body {
-  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
-    'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 20px;
+  justify-content: center;
+  margin-top: 20px;
 }
 
-.wrapper {
-  background-color: #618685;
-  width: 400px;
-  height: 650px;
-  padding: 10px 20px;
-}
-.country-list {
-  width: 360px;
-  padding: 0;
-  margin-bottom: 0px;
-  line-height: 1.5;
+.photo-card > img {
+  width: 380px;
+  height: 240px;
+  object-fit: cover;
 }
 
-.country-list > li {
-  background-color: #d5f4e6;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  padding: 7px;
-}
-
-.country-info {
-  width: 360px;
-}
-
-ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-img {
-  display: inline;
-}
-
-h2 {
-  display: inline;
-}
-.country-card {
-  background-color: #d5f4e6;
-  padding: 10px;
-  border-radius: 5px;
+.hidden {
+  display: none;
 }
