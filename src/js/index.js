@@ -1,12 +1,13 @@
+import axios from 'axios';
 const formEl = document.getElementById('search-form');
 const galleryEl = document.querySelector('.gallery');
 const loadMoreBtn = document.querySelector('.load-more');
 
 const API_KEY = '36396693-28c70313af4bfc02da8bd4331';
 const URL = 'https://pixabay.com/api/';
-let page;
+let currentPage = 0;
 let searchQuery = '';
-const per_page = 40;
+const per_page = 5;
 let markup = '';
 
 formEl.addEventListener('submit', onFormSubmit);
@@ -18,8 +19,9 @@ function onFormSubmit(event) {
 
   searchQuery = formEl.elements[0].value.trim();
   if (searchQuery) {
-    creatFetchRequest();
+    handleFetchRequest();
   } else {
+    currentPage = 0;
     alert('empty field');
     return;
   }
@@ -27,25 +29,24 @@ function onFormSubmit(event) {
 }
 
 async function fetchImages(searchQuery) {
-  page += 1;
+  currentPage += 1;
   const options = {
     q: searchQuery,
     image_type: 'photo',
     orientation: 'horizontal',
     safesearch: true,
-    page: page,
+    page: currentPage,
     per_page: per_page,
   };
 
   const parameters = new URLSearchParams(options);
-
-  const response = await fetch(`${URL}?key=${API_KEY}&${parameters}`);
-  const images = await response.json();
-  return images;
+  const images = await axios.get(`${URL}?key=${API_KEY}&${parameters}`);
+  console.log(images);
+  return images.data.hits;
 }
 
 function createImagesMarkup(images) {
-  markup = images.hits
+  markup = images
     .map(
       ({
         webformatURL,
@@ -89,11 +90,11 @@ function onLoadMoreClick() {
   renderImages(markup);
 }
 
-function creatFetchRequest() {
-  page = 0;
+function handleFetchRequest() {
+  currentPage = 0;
   fetchImages(searchQuery)
     .then(images => {
-      if (images.total === 0) {
+      if (images.totalHits === 0) {
         alert(
           'Sorry, there are no images matching your search query. Please try again.'
         );
