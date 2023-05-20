@@ -82,6 +82,7 @@ function onLoadMore() {
       })
       .catch(error => {
         Notiflix.Notify.warning(error.response.data);
+        console.log(error);
       });
   } else {
     options.page = 0;
