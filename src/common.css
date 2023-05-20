@@ -172,3 +172,7 @@ img {
 .visible {
   display: block;
 }
+
+.captions-style {
+  text-align: right;
+}

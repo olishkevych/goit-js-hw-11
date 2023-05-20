@@ -9,7 +9,6 @@ const formEl = document.getElementById('search-form');
 const galleryEl = document.querySelector('.gallery');
 const spinnerEl = document.getElementById('loading');
 
-let currentPage = 0;
 let searchQuery = '';
 const per_page = 40;
 let markup = '';
@@ -18,7 +17,7 @@ let gallery;
 
 const options = {
   q: searchQuery,
-  page: currentPage,
+  page: 0,
   per_page: per_page,
   image_type: 'photo',
   orientation: 'horizontal',
@@ -30,14 +29,13 @@ formEl.addEventListener('submit', onFormSubmit);
 function onFormSubmit(event) {
   event.preventDefault();
   galleryEl.innerHTML = '';
-
+  options.page = 0;
   searchQuery = formEl.elements[0].value.trim();
   if (searchQuery) {
     spinnerEl.classList.add('visible');
     handleFetchRequest(searchQuery);
     addInfiniteScroll();
   } else {
-    currentPage = 0;
     Notiflix.Notify.failure('Search query is empty');
     return;
   }
@@ -45,8 +43,7 @@ function onFormSubmit(event) {
 }
 
 function handleFetchRequest(searchQuery) {
-  currentPage += 1;
-  options.page = currentPage;
+  options.page = +1;
   options.q = searchQuery;
 
   fetchImages(options)
@@ -60,20 +57,23 @@ function handleFetchRequest(searchQuery) {
         markup = createImagesMarkup(images);
         renderImages(markup);
 
-        gallery = new SimpleLightbox('a', { showCounter: false }).refresh();
+        gallery = new SimpleLightbox('a', {
+          showCounter: false,
+          captions: true,
+          captionsData: 'alt',
+          captionClass: 'captions-style',
+        }).refresh();
       }
     })
     .catch(error => Notiflix.Notify.failure(error));
 }
 
-function onLoadMoreClick() {
-  if (Math.ceil(totalHits / per_page) > currentPage) {
-    currentPage += 1;
-    options.page = currentPage;
+function onLoadMore() {
+  if (Math.ceil(totalHits / per_page) > options.page) {
+    options.page += 1;
     options.q = searchQuery;
     fetchImages(options)
       .then(images => {
-        createImagesMarkup(images);
         markup = createImagesMarkup(images);
         renderImages(markup);
         gallery.refresh();
@@ -83,10 +83,11 @@ function onLoadMoreClick() {
         Notiflix.Notify.warning(error.response.data);
       });
   } else {
+    options.page = 0;
+    removeInfiniteScroll();
     Notiflix.Notify.warning(
       "We're sorry, but you've reached the end of search results."
     );
-    removeInfiniteScroll();
   }
 }
 
@@ -103,8 +104,10 @@ function smoothScrolling() {
 }
 
 // INFINITE SCROLL
-let throttledHandleInfiniteScroll;
+let throttledHandleInfiniteScroll = null;
+
 function addInfiniteScroll() {
+  removeInfiniteScroll();
   throttledHandleInfiniteScroll = throttle(handleInfiniteScroll, 500);
   window.addEventListener('scroll', throttledHandleInfiniteScroll);
 }
@@ -118,7 +121,7 @@ function handleInfiniteScroll() {
     window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
 
   if (endOfPage) {
-    onLoadMoreClick();
+    onLoadMore();
   }
 }
 

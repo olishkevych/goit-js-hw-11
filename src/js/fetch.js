@@ -8,7 +8,7 @@ export async function fetchImages(options) {
   let parameters = new URLSearchParams(options);
   const images = await axios.get(`${URL}?key=${API_KEY}&${parameters}`);
 
-  if (parameters.currentPage === 1 && images.data.totalHits != 0) {
+  if (parameters.page === 1 && images.data.totalHits != 0) {
     Notiflix.Notify.success(`Hooray! We found ${totalHits} images!`);
   }
 
