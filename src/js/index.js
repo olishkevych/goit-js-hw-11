@@ -65,8 +65,7 @@ function handleFetchRequest(searchQuery) {
         }).refresh();
       }
     })
-    // .catch(error => Notiflix.Notify.failure(error));
-    .catch(error => console.log(error));
+    .catch(error => Notiflix.Notify.failure(error));
 }
 
 function onLoadMore() {
@@ -82,7 +81,6 @@ function onLoadMore() {
       })
       .catch(error => {
         Notiflix.Notify.warning(error.response.data);
-        console.log(error);
       });
   } else {
     options.page = 0;

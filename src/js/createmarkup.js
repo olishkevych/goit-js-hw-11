@@ -1,5 +1,5 @@
 export function createImagesMarkup({ hits }) {
-  markup = hits
+  let markup = hits
     .map(
       ({
         webformatURL,
