@@ -1,21 +1,29 @@
-import axios from 'axios';
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import throttle from 'lodash.throttle';
+import { fetchImages } from './fetch';
+import { createImagesMarkup } from './createmarkup';
 
 const formEl = document.getElementById('search-form');
 const galleryEl = document.querySelector('.gallery');
 const spinnerEl = document.getElementById('loading');
 
-const API_KEY = '36396693-28c70313af4bfc02da8bd4331';
-const URL = 'https://pixabay.com/api/';
 let currentPage = 0;
 let searchQuery = '';
 const per_page = 40;
 let markup = '';
 let totalHits = 0;
 let gallery;
+
+const options = {
+  q: searchQuery,
+  page: currentPage,
+  per_page: per_page,
+  image_type: 'photo',
+  orientation: 'horizontal',
+  safesearch: true,
+};
 
 formEl.addEventListener('submit', onFormSubmit);
 
@@ -26,7 +34,7 @@ function onFormSubmit(event) {
   searchQuery = formEl.elements[0].value.trim();
   if (searchQuery) {
     spinnerEl.classList.add('visible');
-    handleFetchRequest();
+    handleFetchRequest(searchQuery);
     addInfiniteScroll();
   } else {
     currentPage = 0;
@@ -36,100 +44,50 @@ function onFormSubmit(event) {
   formEl.reset();
 }
 
-function handleFetchRequest() {
-  currentPage = 0;
-  fetchImages(searchQuery)
+function handleFetchRequest(searchQuery) {
+  currentPage += 1;
+  options.page = currentPage;
+  options.q = searchQuery;
+
+  fetchImages(options)
     .then(images => {
-      if (images.length === 0) {
+      if (images.hits.length === 0) {
         Notiflix.Notify.failure(
           'Sorry, there are no images matching your search query. Please try again.'
         );
       } else {
-        createImagesMarkup(images);
+        totalHits = images.totalHits;
+        markup = createImagesMarkup(images);
         renderImages(markup);
 
         gallery = new SimpleLightbox('a', { showCounter: false }).refresh();
       }
     })
-    .catch(error => console.log(error));
-}
-
-async function fetchImages(searchQuery) {
-  currentPage += 1;
-  const options = {
-    q: searchQuery,
-    page: currentPage,
-    per_page: per_page,
-    image_type: 'photo',
-    orientation: 'horizontal',
-    safesearch: true,
-  };
-  const parameters = new URLSearchParams(options);
-
-  const images = await axios.get(`${URL}?key=${API_KEY}&${parameters}`);
-  totalHits = images.data.totalHits;
-
-  if (currentPage === 1 && totalHits != 0) {
-    Notiflix.Notify.success(`Hooray! We found ${totalHits} images!`);
-  }
-  return images.data.hits;
+    .catch(error => Notiflix.Notify.failure(error));
 }
 
 function onLoadMoreClick() {
-  fetchImages(searchQuery)
-    .then(images => {
-      createImagesMarkup(images);
-      renderImages(markup);
-      gallery.refresh();
-      smoothScrolling();
-    })
-    .catch(error => {
-      if (error.response.data === '[ERROR 400] "page" is out of valid range.') {
-        Notiflix.Notify.warning(
-          "We're sorry, but you've reached the end of search results."
-        );
-        removeInfiniteScroll(); // Call the function to remove the event listener
-      } else {
+  if (Math.ceil(totalHits / per_page) > currentPage) {
+    currentPage += 1;
+    options.page = currentPage;
+    options.q = searchQuery;
+    fetchImages(options)
+      .then(images => {
+        createImagesMarkup(images);
+        markup = createImagesMarkup(images);
+        renderImages(markup);
+        gallery.refresh();
+        smoothScrolling();
+      })
+      .catch(error => {
         Notiflix.Notify.warning(error.response.data);
-      }
-    });
-}
-
-function createImagesMarkup(images) {
-  markup = images
-    .map(
-      ({
-        webformatURL,
-        largeImageURL,
-        tags,
-        likes,
-        views,
-        comments,
-        downloads,
-      }) => {
-        return ` <div class="photo-card"> <a href = ${largeImageURL}>
-       <img src="${webformatURL}" alt="${tags}" loading="lazy" /> </a>
-      <div class="info">
-        <p class="info-item">
-          <b>Likes</b><br> ${likes}
-        </p>
-        <p class="info-item">
-          <b>Views</b><br> ${views}
-        </p>
-        <p class="info-item">
-          <b>Comments</b><br> ${comments}
-        </p>
-        <p class="info-item">
-          <b>Downloads</b> <br>${downloads}
-        </p>
-      </div>
-    </div>
-    
-  `;
-      }
-    )
-    .join('');
-  return markup;
+      });
+  } else {
+    Notiflix.Notify.warning(
+      "We're sorry, but you've reached the end of search results."
+    );
+    removeInfiniteScroll();
+  }
 }
 
 function renderImages(markup) {
